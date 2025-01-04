@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="en">
+
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link rel="stylesheet" href="./assets/fontAwesome.css" />
+    <link rel="stylesheet" href="./assets/style.css" />
+    <title>Upload xlsx</title>
+  </head>
+
+  <body>
+    <div id="drop-area">
+      <div class="drop-icon">
+        <i class="fa-light fa-file-upload"></i>
+      </div>
+      <div class="drop-text"> Drag and drop .xlsx file here <br /> Click to add file </div>
+    </div>
+    <h3><i class="fa-light fa-files"></i> File</h3>
+    <div id="drop-files"></div>
+    <div class="btn-con">
+      <button class="btn btn-primary" disabled id="download"> Download Spreadsheet </button>
+    </div>
+  </body>
+  <script src="./assets/xlsx-populate.min.js"></script>
+  <script lang="javascript" src="./assets/xlsx.js"></script>
+  <script src="./assets/convert-excel-to-json.js.js"></script>
+  <script>
+    let allFiles = [];
+    let resultObj = {};
+    const dropArea = document.getElementById("drop-area");
+    const dropFiles = document.getElementById("drop-files");
+    const download = document.getElementById("download");
+
+    download.addEventListener("click", processFiles, false);
+
+    dropArea.addEventListener("dragenter", preventDefaults, false);
+    dropArea.addEventListener("dragover", preventDefaults, false);
+    dropArea.addEventListener("dragleave", handleDragLeave, false);
+    dropArea.addEventListener("drop", handleDrop, false);
+    dropArea.addEventListener("dragenter", highlight, false);
+    dropArea.addEventListener("dragover", highlight, false);
+    dropArea.addEventListener("dragleave", unhighlight, false);
+    dropArea.addEventListener("drop", unhighlight, false);
+    dropArea.addEventListener("click", openFileDialog, false);
+
+    function preventDefaults (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    function highlight () {
+      dropArea.classList.add("highlight");
+      dropArea.innerHTML = `
+  <div class="drop-icon">
+    <i class="fa-light fa-file-download"></i>
+  </div>
+  <div class="drop-text">Drop files</div>
+  `; // Add this line
+    }
+
+    function unhighlight () {
+      dropArea.classList.remove("highlight");
+      dropArea.innerHTML = `
+  <div class="drop-icon">
+    <i class="fa-light fa-file-upload"></i>
+  </div>
+  <div class="drop-text">Drag and drop .xml files here</div>
+  `;
+    }
+
+    function handleDragLeave (event) {
+      if (event.relatedTarget !== null) {
+        return;
+      }
+      unhighlight();
+    }
+
+    function handleDrop (event) {
+      event.preventDefault();
+      handleFileSelect(event.dataTransfer.files);
+
+      unhighlight();
+    }
+
+    function openFileDialog (event) {
+      const fileInput = document.createElement("input");
+      fileInput.type = "file";
+      fileInput.accept = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet, application/vnd.ms-excel";
+      // fileInput.multiple = true;
+
+      fileInput.addEventListener(
+        "change",
+        (e) => handleFileSelect(e.target.files),
+        false
+      );
+
+      fileInput.click();
+    }
+
+    function fillSheet (sheet, obj) {
+      const maxrowNum = sheet.usedRange()
+        ? sheet.usedRange()._maxRowNumber + 1
+        : 1;
+      const row = sheet.row(maxrowNum);
+      const range = sheet.range(maxrowNum, "A", maxrowNum, "P");
+
+      range.forEach((cell) => {
+        switch (cell.columnName()) {
+          case "A":
+            // console.log(obj);
+            cell.value(
+              `0${obj.Collector_Id}${obj.Farmers_ID.length < 2
+                ? "0"
+                : obj.Farmers_ID.length == 2
+                  ? obj.Farmers_ID
+                  : obj.Farmers_ID.slice(-2)
+              }`
+            );
+            break;
+          case "B":
+            cell.value(obj.Respondent_Status);
+            break;
+          case "C":
+            cell.value(
+              `${obj.First_Name.trim()} ${obj.Last_Name.trim()} ${!obj.Other_Names || obj.Other_Names === "-"
+                ? ""
+                : obj.Other_Names.trim()
+                }`.trim()
+            );
+            break;
+          case "D":
+            cell.value(obj.Sex);
+            break;
+          case "E":
+            cell.value("Farm" + obj.FarmStatus.trim().slice(-1));
+            break;
+          case "F":
+            cell.value(obj.Phone_No.trim());
+            break;
+          case "G":
+            for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+              const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+              sheet
+                .cell(maxrowNum + i, "G")
+                .value(parseFloat(element[0].trim()));
+            }
+            break;
+          case "H":
+            for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+              const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+              sheet
+                .cell(maxrowNum + i, "H")
+                .value(parseFloat(element[1].trim()));
+            }
+            break;
+          case "I":
+            cell.value(parseFloat(obj.Total_Area_Ha));
+            break;
+          case "J":
+            cell.value(obj.AreaCropped);
+            break;
+          case "K":
+            resultObj.crop[obj._index].forEach((crop, i) => {
+              sheet.cell(maxrowNum + i, "K").value(crop);
+            });
+            break;
+          case "L":
+            cell.value(obj.Farm_Community);
+            break;
+          case "M":
+            cell.value(obj.Farmers_Picture);
+            break;
+          case "N":
+            cell.value(obj.Density_Picture);
+            break;
+          case "O":
+            cell.value(obj._uuid);
+            break;
+          case "P":
+            cell.value(new Date(obj.start).toDateString());
+            break;
+          default:
+            break;
+        }
+      });
+      sheet
+        .range(maxrowNum, "M", sheet.usedRange()._maxRowNumber, "M")
+        .merged(true);
+      sheet
+        .range(maxrowNum, "N", sheet.usedRange()._maxRowNumber, "N")
+        .merged(true);
+      sheet
+        .row(sheet.usedRange()._maxRowNumber)
+        .style({ bottomBorder: { style: "thin", color: "0f0f0f" } });
+
+      for (const key in sheet._dataValidations) {
+        if (key[1] === "1") {
+          const newKey = key + " " + key + maxrowNum;
+          const value = sheet._dataValidations[key];
+
+          value.attributes.sqref = newKey;
+          sheet._dataValidations[newKey] = value;
+          delete sheet._dataValidations[key];
+        }
+      }
+    }
+
+    const file2data = async (file) => {
+      if (file.type !== "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" && file.type !== "application/vnd.ms-excel") {
+        console.log("wrong File:", file.type);
+      }
+
+      const result = excelToJson({
+        sourceFile: await file.arrayBuffer(),
+        header: {
+          rows: 1,
+        },
+        sheets: [
+          {
+            name: "Enumeration",
+            columnToKey: Object.fromEntries(
+              "abcdefghijklmnopqrstuvwxyz"
+                .toUpperCase()
+                .split("")
+                .map((char) => [char, `{{${char}1}}`])
+            ),
+          },
+          {
+            name: "planted_Crops",
+            columnToKey: Object.fromEntries(
+              "abcdefg"
+                .toUpperCase()
+                .split("")
+                .map((char) => [char, `{{${char}1}}`])
+            ),
+          },
+        ],
+      });
+
+      let planted_Crops = {};
+      result.planted_Crops.forEach((crop) => {
+        const string = `${crop.Assessed_CropPlanted} ${crop.CropPercentage}${Number(crop.CropPercentage) ? "%" : ""
+          } ${crop.Category_CropPlanted.toUpperCase()};`;
+
+        planted_Crops[crop._parent_index] = planted_Crops[crop._parent_index]
+          ? [...planted_Crops[crop._parent_index], string]
+          : [string];
+      });
+      allFiles.push({
+        name: file.name,
+      });
+      resultObj = {data: result.Enumeration, crop: planted_Crops}
+    };
+
+    function processFiles () {
+      console.log(resultObj);
+      XlsxPopulate.fromBlankAsync().then((workbook) => {
+        const sheet = workbook.sheet(0);
+
+        sheet.column("A").width(8).cell(1).value("FarmerID");
+        sheet.column("B").width(10).cell(1).value("Status");
+        sheet.column("C").width(30).cell(1).value("Name");
+        sheet.column("D").width(8).cell(1).value("Sex");
+        sheet.column("E").width(10).cell(1).value("Farm");
+        sheet
+          .column("F")
+          .width(12)
+          .style({ horizontalAlignment: "justify" })
+          .cell(1)
+          .value("Phone No");
+        sheet
+          .column("G")
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
+          .cell(1)
+          .value("X-Cord");
+        sheet
+          .column("H")
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
+          .cell(1)
+          .value("Y-Cord");
+        sheet.column("I").width(9).cell(1).value("Area(Ha)");
+        sheet.column("J").width(15).cell(1).value("Percentage Cropped");
+        sheet
+          .column("K")
+          .width(16)
+          .style({ horizontalAlignment: "center", wrapText: true })
+          .cell(1)
+          .value("Crop");
+        sheet.column("L").width(12).cell(1).value("Community");
+        sheet.column("M").width(25).cell(1).value("Farmer Photo");
+        sheet.column("N").width(25).cell(1).value("Farm Photo");
+        sheet.column("O").hidden(true).width(10).cell(1).value("uuid");
+        sheet.column("P").width(25).cell(1).value("Date");
+
+        for (obj of resultObj.data) {
+          fillSheet(sheet, obj);
+        }
+
+        workbook.outputAsync({ type: "blob" }).then((blob) => {
+          if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, "Data.xlsx");
+          } else {
+            var url = window.URL.createObjectURL(blob);
+            var a = document.createElement("a");
+            document.body.appendChild(a);
+            a.href = url;
+            a.download = "Data.xlsx";
+            a.click();
+            window.URL.revokeObjectURL(url);
+            document.body.removeChild(a);
+          }
+        });
+      });
+    }
+
+    function handleFileSelect (files) {
+      if (!files) {
+        alert("Error");
+        return;
+      }
+      download.disabled = false;
+      let start = allFiles.length;
+
+      for (file of files) {
+        dropFiles.innerHTML += `
+  <div class="drop-file" id=${start}>
+    <span>${start + 1})</span>
+    <i class="fa-light fa-file"></i> ${file.name}
+    <i class="fa-light fa-circle-x" onClick="deleteFile(${start++})"></i>
+  </div>`;
+      }
+      file2data(files[0]);
+    }
+
+    function deleteFile (index) {
+      allFiles.splice(index, 1);
+      dropFiles.innerHTML = "";
+
+      let start = 0;
+      if (allFiles.length === 0) {
+        download.disabled = true;
+      }
+
+      for (file of allFiles) {
+        dropFiles.innerHTML += `
+  <div class="drop-file" id=${start}>
+    <span>${start + 1})</span>
+    <i class="fa-light fa-file"></i> ${file.name}
+    <i class="fa-light fa-circle-x" onClick="deleteFile(${start++})"></i>
+  </div>`;
+      }
+    }
+  </script>
+
+</html>
