@@ -232,15 +232,7 @@
         name: file.name,
       });
       resultObj = {
-        data: Object.values(result)[0].sort((a, b) => {
-          const diffDays = ((new Date(a.start) - new Date(b.start)) / (1000 * 60 * 60 * 24));
-          return diffDays > 1 ? 1 : diffDays < 0 ? -1
-            : 0;
-        }).sort((a, b) => {
-          return a.Collector_Id > b.Collector_Id ? 1 : a.Collector_Id < b.Collector_Id ? -1
-            : a.Farmers_ID > b.Farmers_ID ? 1 : a.Farmers_ID < b.Farmers_ID ? -1
-              : 0;
-        }), crop: planted_Crops
+        data: Object.values(result)[0], crop: planted_Crops
       };
     };
 
