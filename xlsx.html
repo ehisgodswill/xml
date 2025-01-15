@@ -110,11 +110,9 @@
           case "A":
             // console.log(obj);
             cell.value(
-              `0${obj.Collector_Id}${obj.Farmers_ID.length < 2
-                ? "0"
-                : obj.Farmers_ID.length == 2
-                  ? obj.Farmers_ID
-                  : obj.Farmers_ID.slice(-2)
+              `0${obj.Collector_Id}${String(obj.Farmers_ID).length < 2
+                ? "0" + obj.Farmers_ID
+                : obj.Farmers_ID
               }`
             );
             break;
@@ -133,10 +131,10 @@
             cell.value(obj.Sex);
             break;
           case "E":
-            cell.value("Farm" + obj.FarmStatus.trim().slice(-1));
+            cell.value("Farm" + obj.FarmStatus);
             break;
           case "F":
-            cell.value(obj.Phone_No.trim());
+            cell.value(String(obj.Phone_No || '').trim());
             break;
           case "G":
             for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
@@ -155,18 +153,18 @@
             }
             break;
           case "I":
-            cell.value(parseFloat(obj.Total_Area_Ha));
+            cell.value(obj.Total_Area_Ha);
             break;
           case "J":
-            cell.value(obj.AreaCropped);
+            cell.value(obj.AreaCropped + '%');
             break;
           case "K":
-            resultObj.crop[obj._index].forEach((crop, i) => {
-              sheet.cell(maxrowNum + i, "K").value(crop);
-            });
+            cell.value(parseFloat(obj.Total_Area_Ha * obj.AreaCropped * 0.01).toFixed(2));
             break;
           case "L":
-            cell.value(obj.Farm_Community);
+            resultObj.crop[obj._index].forEach((crop, i) => {
+              sheet.cell(maxrowNum + i, "L").value(crop);
+            });
             break;
           case "M":
             cell.value(obj.Farmers_Picture);
@@ -216,26 +214,9 @@
         header: {
           rows: 1,
         },
-        sheets: [
-          {
-            name: "Enumeration",
-            columnToKey: Object.fromEntries(
-              "abcdefghijklmnopqrstuvwxyz"
-                .toUpperCase()
-                .split("")
-                .map((char) => [char, `{{${char}1}}`])
-            ),
-          },
-          {
-            name: "planted_Crops",
-            columnToKey: Object.fromEntries(
-              "abcdefg"
-                .toUpperCase()
-                .split("")
-                .map((char) => [char, `{{${char}1}}`])
-            ),
-          },
-        ],
+        columnToKey: {
+          '*': '{{columnHeader}}'
+        }
       });
 
       let planted_Crops = {};
@@ -250,11 +231,20 @@
       allFiles.push({
         name: file.name,
       });
-      resultObj = {data: result.Enumeration, crop: planted_Crops}
+      resultObj = {
+        data: Object.values(result)[0].sort((a, b) => {
+          const diffDays = ((new Date(a.start) - new Date(b.start)) / (1000 * 60 * 60 * 24));
+          return diffDays > 1 ? 1 : diffDays < 0 ? -1
+            : 0;
+        }).sort((a, b) => {
+          return a.Collector_Id > b.Collector_Id ? 1 : a.Collector_Id < b.Collector_Id ? -1
+            : a.Farmers_ID > b.Farmers_ID ? 1 : a.Farmers_ID < b.Farmers_ID ? -1
+              : 0;
+        }), crop: planted_Crops
+      };
     };
 
     function processFiles () {
-      console.log(resultObj);
       XlsxPopulate.fromBlankAsync().then((workbook) => {
         const sheet = workbook.sheet(0);
 
@@ -281,15 +271,15 @@
           .style({ horizontalAlignment: "justify" })
           .cell(1)
           .value("Y-Cord");
-        sheet.column("I").width(9).cell(1).value("Area(Ha)");
-        sheet.column("J").width(15).cell(1).value("Percentage Cropped");
+        sheet.column("I").width(9).cell(1).value("Hectrage");
+        sheet.column("J").width(15).cell(1).value("Percentage");
+        sheet.column("K").width(9).cell(1).value("Area (Ha)");
         sheet
-          .column("K")
+          .column("L")
           .width(16)
           .style({ horizontalAlignment: "center", wrapText: true })
           .cell(1)
           .value("Crop");
-        sheet.column("L").width(12).cell(1).value("Community");
         sheet.column("M").width(25).cell(1).value("Farmer Photo");
         sheet.column("N").width(25).cell(1).value("Farm Photo");
         sheet.column("O").hidden(true).width(10).cell(1).value("uuid");
