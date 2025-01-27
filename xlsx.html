@@ -153,13 +153,13 @@
             }
             break;
           case "I":
-            cell.value(obj.Total_Area_Ha);
+            cell.value(Number(obj.Total_Area_Ha));
             break;
           case "J":
             cell.value(obj.AreaCropped + '%');
             break;
           case "K":
-            cell.value(parseFloat(obj.Total_Area_Ha * obj.AreaCropped * 0.01).toFixed(2));
+            cell.value(Number(parseFloat(obj.Total_Area_Ha * obj.AreaCropped * 0.01).toFixed(2)));
             break;
           case "L":
             resultObj.crop[obj._index].forEach((crop, i) => {

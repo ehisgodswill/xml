@@ -10,7 +10,7 @@ Dim uuid As String
 Set ws = ThisWorkbook.Sheets("Sheet1") ' Change to your sheet name
 
 ' Set the folder path where images are stored
-imgFolder = "C:\Users\USER\Downloads\83cfcef720ca41b9a4d884d79c766224\" ' Change to your folder path
+imgFolder = "C:\Users\USER\Downloads\095a49609ff34adb9d820a71bb94937b\" ' Change to your folder path
 
 ' Get the last row in the column where filenames are listed
 lastRow = ws.Cells(ws.Rows.Count, 1).End(xlUp).Row ' Assuming filenames are in column A
