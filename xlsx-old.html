@@ -18,9 +18,9 @@
     </div>
     <h3><i class="fa-light fa-files"></i> File</h3>
     <div id="drop-files"></div>
-    <!-- <div class="btn-con">
+    <div class="btn-con">
       <button class="btn btn-primary" disabled id="download"> Download Spreadsheet </button>
-    </div> -->
+    </div>
   </body>
   <script src="./assets/browser/xlsx-populate.min.js"></script>
   <script lang="javascript" src="./assets/xlsx.js"></script>
@@ -30,9 +30,9 @@
     let resultObj = {};
     const dropArea = document.getElementById("drop-area");
     const dropFiles = document.getElementById("drop-files");
-    // const download = document.getElementById("download");
+    const download = document.getElementById("download");
 
-    // download.addEventListener("click", processFiles, false);
+    download.addEventListener("click", processFiles, false);
 
     dropArea.addEventListener("dragenter", preventDefaults, false);
     dropArea.addEventListener("dragover", preventDefaults, false);
@@ -98,7 +98,7 @@
       fileInput.click();
     }
 
-    function fillSheet (sheet, obj, index) {
+    function fillSheet (sheet, obj) {
       const maxrowNum = sheet.usedRange()
         ? sheet.usedRange()._maxRowNumber + 1
         : 1;
@@ -108,12 +108,12 @@
       range.forEach((cell) => {
         switch (cell.columnName()) {
           case "A":
-            const date = new Date(obj.start);
+            // console.log(obj);
             cell.value(
               `0${obj.Collector_Id}${String(obj.Farmers_ID).length < 2
                 ? "0" + obj.Farmers_ID
                 : obj.Farmers_ID
-              }-${date.getDate()}/${date.getMonth() + 1}/${date.getFullYear() - 2000}`
+              }`
             );
             break;
           case "B":
@@ -137,15 +137,20 @@
             cell.value(String(obj.Phone_No || '').trim());
             break;
           case "G":
-            // cell.value(
-            //   `0${obj.Collector_Id}${String(obj.Farmers_ID).length < 2
-            //     ? "0" + obj.Farmers_ID
-            //     : obj.Farmers_ID
-            //   }`);
+            for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+              const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+              sheet
+                .cell(maxrowNum + i, "G")
+                .value(parseFloat(element[0].trim()));
+            }
             break;
           case "H":
-            const cords = obj.FarmBoundary.trim().split(";").map((cord) => cord.trim().split(" ").slice(0, 2).join(" "));
-            cell.value(`POLYGON (( ${cords.join(", ")} ))`);
+            for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+              const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+              sheet
+                .cell(maxrowNum + i, "H")
+                .value(parseFloat(element[1].trim()));
+            }
             break;
           case "I":
             cell.value(Number(obj.Total_Area_Ha));
@@ -157,10 +162,9 @@
             cell.value(Number(parseFloat(obj.Total_Area_Ha * obj.AreaCropped * 0.01).toFixed(2)));
             break;
           case "L":
-            // resultObj.crop[obj._index].forEach((crop, i) => {
-            //   sheet.cell(maxrowNum + i, "L").value(crop);
-            // });
-            cell.value(resultObj.crop[obj._index].join("\n"));
+            resultObj.crop[obj._index].forEach((crop, i) => {
+              sheet.cell(maxrowNum + i, "L").value(crop);
+            });
             break;
           case "M":
             cell.value(obj.Farmers_Picture);
@@ -185,9 +189,8 @@
         .range(maxrowNum, "N", sheet.usedRange()._maxRowNumber, "N")
         .merged(true);
       sheet
-        .row(sheet.usedRange()._maxRowNumber).height(150)
-        .style({ bottomBorder: { style: "thin", color: "0f0f0f" }});
-      row.style({ fill: index % 2 ? 'f0f0f0' : 'ffffff' })
+        .row(sheet.usedRange()._maxRowNumber)
+        .style({ bottomBorder: { style: "thin", color: "0f0f0f" } });
 
       for (const key in sheet._dataValidations) {
         if (key[1] === "1") {
@@ -244,23 +247,22 @@
         sheet.column("E").width(10).cell(1).value("Farm");
         sheet
           .column("F")
-          .width(14)
+          .width(12)
           .style({ horizontalAlignment: "justify" })
           .cell(1)
           .value("Phone No");
         sheet
           .column("G")
-          .width(12)
-          .hidden(true)
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
           .cell(1)
-          .value("");
+          .value("X-Cord");
         sheet
           .column("H")
-          .width(25)
-          .hidden(true)
-          .style({ wrapText: false })
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
           .cell(1)
-          .value("Cordinates");
+          .value("Y-Cord");
         sheet.column("I").width(9).cell(1).value("Hectrage");
         sheet.column("J").width(15).cell(1).value("Percentage");
         sheet.column("K").width(9).cell(1).value("Area (Ha)");
@@ -270,16 +272,13 @@
           .style({ horizontalAlignment: "center", wrapText: true })
           .cell(1)
           .value("Crop");
-        sheet.column("M").width(50).cell(1).value("Farmer Photo");
-        sheet.column("N").width(50).cell(1).value("Farm Photo");
+        sheet.column("M").width(25).cell(1).value("Farmer Photo");
+        sheet.column("N").width(25).cell(1).value("Farm Photo");
         sheet.column("O").hidden(true).width(10).cell(1).value("uuid");
         sheet.column("P").width(25).cell(1).value("Date");
-        sheet.row(1).style({fill: 'cccccc', bold:true, fontSize: 14})
-        sheet.freezePanes(0, 1);
 
-        let i = 0;
         for (obj of resultObj.data) {
-          fillSheet(sheet, obj, i++);
+          fillSheet(sheet, obj);
         }
 
         workbook.outputAsync({ type: "blob" }).then((blob) => {
@@ -304,7 +303,7 @@
         alert("Error");
         return;
       }
-      // download.disabled = false;
+      download.disabled = false;
       let start = allFiles.length;
 
       for (file of files) {
@@ -316,7 +315,6 @@
   </div>`;
       }
       file2data(files[0]);
-      processFiles();
     }
 
     function deleteFile (index) {
@@ -324,9 +322,9 @@
       dropFiles.innerHTML = "";
 
       let start = 0;
-      // if (allFiles.length === 0) {
-      //   download.disabled = true;
-      // }
+      if (allFiles.length === 0) {
+        download.disabled = true;
+      }
 
       for (file of allFiles) {
         dropFiles.innerHTML += `
