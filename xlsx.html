@@ -185,7 +185,7 @@
         .range(maxrowNum, "N", sheet.usedRange()._maxRowNumber, "N")
         .merged(true);
       sheet
-        .row(sheet.usedRange()._maxRowNumber).height(150)
+        .row(sheet.usedRange()._maxRowNumber).height(100)
         .style({ bottomBorder: { style: "thin", color: "0f0f0f" }});
       row.style({ fill: index % 2 ? 'f0f0f0' : 'ffffff' })
 
@@ -237,7 +237,7 @@
       XlsxPopulate.fromBlankAsync().then((workbook) => {
         const sheet = workbook.sheet(0);
 
-        sheet.column("A").width(8).cell(1).value("FarmerID");
+        sheet.column("A").width(12).cell(1).value("FarmerID");
         sheet.column("B").width(10).cell(1).value("Status");
         sheet.column("C").width(30).cell(1).value("Name");
         sheet.column("D").width(8).cell(1).value("Sex");
@@ -270,8 +270,8 @@
           .style({ horizontalAlignment: "center", wrapText: true })
           .cell(1)
           .value("Crop");
-        sheet.column("M").width(50).cell(1).value("Farmer Photo");
-        sheet.column("N").width(50).cell(1).value("Farm Photo");
+        sheet.column("M").width(25).cell(1).value("Farmer Photo");
+        sheet.column("N").width(25).cell(1).value("Farm Photo");
         sheet.column("O").hidden(true).width(10).cell(1).value("uuid");
         sheet.column("P").width(25).cell(1).value("Date");
         sheet.row(1).style({fill: 'cccccc', bold:true, fontSize: 14})
