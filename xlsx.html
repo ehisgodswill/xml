@@ -103,7 +103,7 @@
         ? sheet.usedRange()._maxRowNumber + 1
         : 1;
       const row = sheet.row(maxrowNum);
-      const range = sheet.range(maxrowNum, "A", maxrowNum, "P");
+      const range = sheet.range(maxrowNum, "A", maxrowNum, "R");
 
       range.forEach((cell) => {
         switch (cell.columnName()) {
@@ -162,6 +162,22 @@
           case "P":
             cell.value(new Date(obj.start).toDateString());
             break;
+          case "Q":
+          for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+            const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+            sheet
+              .cell(maxrowNum + i, "Q")
+              .value(parseFloat(element[0].trim()));
+          }
+          break;
+        case "R":
+          for (let i = 0; i < obj.FarmBoundary.split(";").length; i++) {
+            const element = obj.FarmBoundary.split(";")[i].trim().split(" ");
+            sheet
+              .cell(maxrowNum + i, "R")
+              .value(parseFloat(element[1].trim()));
+          }
+          break;
           default:
             break;
         }
@@ -173,9 +189,10 @@
         .range(maxrowNum, "N", sheet.usedRange()._maxRowNumber, "N")
         .merged(true);
       sheet
-        .row(sheet.usedRange()._maxRowNumber).height(100)
-        .style({ bottomBorder: { style: "thin", color: "0f0f0f" }});
-      row.style({ fill: index % 2 ? 'f0f0f0' : 'ffffff' })
+        .row(sheet.usedRange()._maxRowNumber)
+        // .height(100)
+        .style({ bottomBorder: { style: "thin", color: "0f0f0f" } });
+      // row.style({ fill: index % 2 ? 'f0f0f0' : 'ffffff' });
 
       for (const key in sheet._dataValidations) {
         if (key[1] === "1") {
@@ -257,7 +274,20 @@
         sheet.column("N").width(25).cell(1).value("Farm Photo");
         sheet.column("O").hidden(true).width(10).cell(1).value("uuid");
         sheet.column("P").width(25).cell(1).value("Date");
-        sheet.row(1).style({fill: 'cccccc', bold:true, fontSize: 14})
+        sheet
+          .column("Q")
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
+          .cell(1)
+          .value("X-Cord");
+        sheet
+          .column("R")
+          .width(10)
+          .style({ horizontalAlignment: "justify" })
+
+          .cell(1)
+          .value("Y-Cord");
+        sheet.row(1).style({ fill: 'cccccc', bold: true, fontSize: 14 });
         sheet.freezePanes(0, 1);
 
         let i = 0;
