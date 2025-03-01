@@ -120,12 +120,7 @@
             cell.value(obj.Respondent_Status);
             break;
           case "C":
-            cell.value(
-              `${obj.First_Name.trim()} ${obj.Last_Name.trim()} ${!obj.Other_Names || obj.Other_Names === "-"
-                ? ""
-                : obj.Other_Names.trim()
-                }`.trim()
-            );
+            cell.value(obj.Name.trim());
             break;
           case "D":
             cell.value(obj.Sex);
@@ -137,11 +132,7 @@
             cell.value(String(obj.Phone_No || '').trim());
             break;
           case "G":
-            // cell.value(
-            //   `0${obj.Collector_Id}${String(obj.Farmers_ID).length < 2
-            //     ? "0" + obj.Farmers_ID
-            //     : obj.Farmers_ID
-            //   }`);
+            cell.value(obj.Caretaker);
             break;
           case "H":
             const cords = obj.FarmBoundary.trim().split(";").map((cord) => cord.trim().split(" ").slice(0, 2).join(" "));
@@ -157,9 +148,6 @@
             cell.value(Number(parseFloat(obj.Total_Area_Ha * obj.AreaCropped * 0.01).toFixed(2)));
             break;
           case "L":
-            // resultObj.crop[obj._index].forEach((crop, i) => {
-            //   sheet.cell(maxrowNum + i, "L").value(crop);
-            // });
             cell.value(resultObj.crop[obj._index].join("\n"));
             break;
           case "M":
@@ -248,12 +236,7 @@
           .style({ horizontalAlignment: "justify" })
           .cell(1)
           .value("Phone No");
-        sheet
-          .column("G")
-          .width(12)
-          .hidden(true)
-          .cell(1)
-          .value("");
+        sheet.column("G").width(30).cell(1).value("Caretaker");
         sheet
           .column("H")
           .width(25)
